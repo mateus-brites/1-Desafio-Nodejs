@@ -3,6 +3,8 @@ const cors = require("cors");
 
 const { v4: uuid, validate: isUuid } = require('uuid');
 
+
+
 const app = express();
 
 app.use(express.json());
@@ -77,9 +79,52 @@ app.post("/repositories/:id/like", (request, response) => {
   };
 
   repositories[repositoryIndex].likes ++;
+  repositories[repositoryIndex].date = Date.now();
+
+
   
   return response.json(repositories[repositoryIndex]);
 
 });
 
 module.exports = app;
+
+app.get("/repositories/placar", (request, response) =>{
+  let vencedores = [];
+
+  let vencedor = {
+    id: 'perdedor',
+    title: 'perdedor',
+    likes: 0
+  }
+  for( repository of repositories){
+    if ( repository.likes  > vencedor.likes) {
+      vencedor = repository; 
+      vencedores = [repository.id, repository.date];
+    }
+    if ( repository.likes === vencedor.likes && repository.likes > 0 && repository.id !== vencedor.id ){
+      vencedores.push([repository.id, repository.date]);
+      vencedor = repository;
+    }
+  }
+  if (vencedor.likes === 0){
+    return response.json('só tem perdedor');
+  }
+
+  vencedores.sort(function(a,b){
+    return a.date - b.date;
+  });
+
+  return(response.json(vencedores));
+});
+
+app.get("/repositories/rank", ( request, response ) => {
+  let rank = [...repositories];
+
+  rank.sort(function(a, b){
+    return b.likes - a.likes;
+  });
+
+  return (response.json(rank));
+
+});
